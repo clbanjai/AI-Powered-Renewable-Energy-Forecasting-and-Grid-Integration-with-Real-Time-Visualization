@@ -1,0 +1,7 @@
+flask
+pandas
+numpy
+plotly
+meteostat
+scikit-learn
+xgboost

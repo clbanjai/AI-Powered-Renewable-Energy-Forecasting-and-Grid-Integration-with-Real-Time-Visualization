@@ -1,0 +1,122 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Energy Generation Forecast</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .controls input, .controls button {
+            margin: 0 10px;
+            padding: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #plot {
+            margin-top: 20px;
+        }
+        #dataTable {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Energy Generation Forecast</h1>
+        
+        <div class="controls">
+            <input type="date" id="date" value="<?php echo date('Y-m-d'); ?>">
+            <input type="time" id="time" value="00:00">
+            <button onclick="getForecast()">Get Forecast</button>
+        </div>
+        
+        <div id="plot"></div>
+        <div id="dataTable"></div>
+    </div>
+
+    <script>
+        function getForecast() {
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            
+            $.ajax({
+                url: '/get_forecast',
+                type: 'POST',
+                data: {
+                    date: date,
+                    time: time
+                },
+                success: function(response) {
+                    // Plot the graph
+                    Plotly.newPlot('plot', JSON.parse(response.plot).data, JSON.parse(response.plot).layout);
+                    
+                    // Create data table
+                    let tableHTML = '<table><tr><th>Datetime</th><th>Solar (MWh)</th><th>Wind (MWh)</th><th>Demand (MWh)</th></tr>';
+                    response.data.forEach(row => {
+                        tableHTML += `<tr>
+                            <td>${row.datetime}</td>
+                            <td>${row.solar.toFixed(2)}</td>
+                            <td>${row.wind.toFixed(2)}</td>
+                            <td>${row.demand.toFixed(2)}</td>
+                        </tr>`;
+                    });
+                    tableHTML += '</table>';
+                    document.getElementById('dataTable').innerHTML = tableHTML;
+                },
+                error: function(error) {
+                    alert('Error getting forecast: ' + error.responseJSON.error);
+                }
+            });
+        }
+        
+        // Load initial forecast
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            getForecast();
+        });
+    </script>
+</body>
+</html>
